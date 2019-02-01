@@ -1,0 +1,8 @@
+{
+    "name": "HAPD webhook",
+    "description": "",
+    "repository": "https://github.com/dc430/webhook_hapd",
+    "logo": "http://xvir.github.io/img/apiai.png",
+    "keywords": ["python", "app", "healthcare"]
+}
+  
