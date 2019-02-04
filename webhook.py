@@ -22,7 +22,7 @@ def makeResponse(req):
     pId = req.get('patientID')
     with open('User.json', 'r') as f: 
         d = json.load(f)
-    d["pId"] = {
+    d[str(pId)] = {
         "name": req.get('name'),
         "pin": req.get('pin'),
         "age": req.get('age'),
