@@ -12,21 +12,27 @@ app = Flask(__name__)
 @app.route('/webhook', methods=['POST'])
 def webhook():
     req = request.get_json(silent=True, force=True)
-    print(json.dumps(req, indent=4))
-    
     res = makeResponse(req)
-    
     res = json.dumps(res, indent=4)
-    # print(res)
     r = make_response(res)
     r.headers['Content-Type'] = 'application/json'
     return r
 
 def makeResponse(req):
-    name = req.get('name')
-    speech = 'Name:' + name
+    pId = req.get('patientID')
+    with open('User.json', 'r') as f: 
+        d = json.load(f)
+    d["pId"] = {
+        "name": req.get('name'),
+        "pin": req.get('pin'),
+        "age": req.get('age'),
+        "dob": req.get('dob'),
+        "gender": req.get('gender')
+    }
+    with open('User.json', 'w') as f: 
+        json.dump(d, f, indent=4)
     return {
-    "fulfillmentText": speech,
+    "fulfillmentText": d,
     "source": "webhook"
     }
 
