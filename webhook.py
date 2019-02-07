@@ -1,7 +1,7 @@
 import json
 import os
 import requests
-
+from github import Github
 from flask import Flask
 from flask import request
 from flask import make_response
@@ -9,32 +9,42 @@ from flask import make_response
 # Flask app should start in global layout
 app = Flask(__name__)
 
-@app.route('/webhook', methods=['POST'])
+def init_gh_user():
+    return Github("hapd", "mAJORPROJECT19").get_user()
+
+@app.route('/addNewUser', methods=['POST'])
 def webhook():
     req = request.get_json(silent=True, force=True)
-    res = makeResponse(req)
-    res = json.dumps(res, indent=4)
-    r = make_response(res)
-    r.headers['Content-Type'] = 'application/json'
-    return r
-
-def makeResponse(req):
+    db = init_gh_user().get_repo("database")
+    users = db.get_contents("users.json")
+    temp = users.decoded_content.decode("utf-8")
+    temp = json.loads(temp)
     pId = req.get('patientID')
-    with open('User.json', 'r') as f: 
-        d = json.load(f)
-    d[str(pId)] = {
+    temp[pId] = {
         "name": req.get('name'),
         "pin": req.get('pin'),
         "age": req.get('age'),
         "dob": req.get('dob'),
         "gender": req.get('gender')
     }
-    with open('User.json', 'w') as f: 
-        json.dump(d, f, indent=4)
-    return {
-    "fulfillmentText": d,
-    "source": "webhook"
-    }
+    temp = json.dumps(temp, indent=4)
+    try:
+        db.update_file(users.path, "Update users", str(temp), users.sha)
+        s = 1
+    except:
+        s = 0
+    if(s == 0):
+        res = {
+            "fullfillmentText": "New account creation failed"
+        }
+    else:
+        res = {
+            "fullfillmentText": "New account creation successful"
+        }
+    res = json.dumps(res, indent=4)
+    r = make_response(res)
+    r.headers['Content-Type'] = 'application/json'
+    return r
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
