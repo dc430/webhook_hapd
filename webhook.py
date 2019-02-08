@@ -13,20 +13,21 @@ def init_gh_user():
     return Github("hapd", "mAJORPROJECT19").get_user()
 
 @app.route('/addNewUser', methods=['POST'])
-def webhook():
+def addNewUser():
     req = request.get_json(silent=True, force=True)
     db = init_gh_user().get_repo("database")
     users = db.get_contents("users.json")
     temp = users.decoded_content.decode("utf-8")
     temp = json.loads(temp)
-    pId = req.get('patientID')
-    temp[pId] = {
+    pid = temp["currentPID"]
+    temp[str(pId)] = {
         "name": req.get('name'),
         "pin": req.get('pin'),
         "age": req.get('age'),
         "dob": req.get('dob'),
         "gender": req.get('gender')
     }
+    temp["currentPID"] = int(temp["currentPID"])
     temp = json.dumps(temp, indent=4)
     try:
         db.update_file(users.path, "Update users", str(temp), users.sha)
@@ -40,6 +41,26 @@ def webhook():
     else:
         res = {
             "fullfillmentText": "New account creation successful"
+        }
+    res = json.dumps(res, indent=4)
+    r = make_response(res)
+    r.headers['Content-Type'] = 'application/json'
+    return r
+
+@app.route('/checkLogin', methods=['POST'])
+def checkLogin():
+    req = request.get_json(silent=True, force=True)
+    db = init_gh_user().get_repo("database")
+    users = db.get_contents("users.json")
+    temp = users.decoded_content.decode("utf-8")
+    temp = json.loads(temp)
+    if(temp[req.get('pId')["pin"]] == req.get("pin")):
+        res = {
+            "Login Access": "True"
+        }
+    else:
+        res = {
+            "Login Access": "False"
         }
     res = json.dumps(res, indent=4)
     r = make_response(res)
