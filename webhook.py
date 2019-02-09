@@ -6,20 +6,26 @@ from flask import Flask
 from flask import request
 from flask import make_response
 
-# Flask app should start in global layout
 app = Flask(__name__)
 
-USER = "hapd"
-PWD = "mAJORPROJECT19"
-
-@app.route('/addUser', methods=['POST'])
-def addUser():
+@app.route('/webhook', methods=['POST'])
+def webhook():
     req = request.get_json(silent=True, force=True)
-    gh = Github(USER, PWD)
-    db = gh.get_repo("database")
-    users = db.get_contents("users.json")
-    temp = (users.decoded_content).decode("utf-8")
-    temp = json.loads(temp)
+    print(json.dumps(req, indent=4))
+    res = makeResponse(req)
+    res = json.dumps(res, indent=4)
+    print(res)
+    r = make_response(res)
+    r.headers['Content-Type'] = 'application/json'
+    return r
+
+def makeResponse(req):
+    gh = Github("hapd", "mAJORPROJECT19")
+    u = gh.get_user()
+    repo = u.get_repo("database")
+    db = repo.get_file_contents("users.json")
+    temp = db.decoded_content.decode("utf-8")
+    emp = json.loads(temp)
     pid = temp["currentPID"]
     temp[str(pid)] = {
         "name": req.get('name'),
@@ -28,28 +34,36 @@ def addUser():
         "dob": req.get('dob'),
         "gender": req.get('gender')
     }
-    temp["currentPID"] = str(int(temp["currentPID"])+1)
+    temp["currentPID"] = int(temp["currentPID"])
     temp = json.dumps(temp, indent=4)
     try:
-        db.update_file(users.path, "Update users", str(temp), users.sha)
-        s = 1
+        db.update_file(db.path, "Update users", str(temp), db.sha)
+        speech = "Account creation successful"
     except:
-        s = 0
-    if(s == 0):
-        res = {
-            "fullfillmentText": "New account creation failed"
-        }
-    else:
-        res = {
-            "fullfillmentText": "New account creation successful"
-        }
-    res = json.dumps(res, indent=4)
-    r = make_response(res)
-    r.headers['Content-Type'] = 'application/json'
-    return r
-
+        speech = "Account creation failed"
+    return {
+    "fulfillmentText": speech,
+    "source": "webhook-hapd-api"
+    }
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
     print("Starting app on port %d" % port)
     app.run(debug=False, port=port, host='0.0.0.0')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
