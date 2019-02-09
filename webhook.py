@@ -25,7 +25,7 @@ def makeResponse(req):
     repo = u.get_repo("database")
     db = repo.get_file_contents("users.json")
     temp = db.decoded_content.decode("utf-8")
-    emp = json.loads(temp)
+    temp = json.loads(temp)
     pid = temp["currentPID"]
     temp[str(pid)] = {
         "name": req.get('name'),
